@@ -12,6 +12,7 @@
 		<button id="buttonGetStatus">Get Status</button>
 		<button id="buttonGetAnalog">Get Analog</button>
         <button id="buttonGetRSSI">Get WiFi Signal</button>
+        <button id="buttonGetTemperature">Get Temperature</button>
 		<button id="buttonLEDOn">LED ON</button>
 		<button id="buttonLEDOff">LED OFF</button>
 	</div>
@@ -91,21 +92,24 @@
         buttonGetRSSI.onclick=function(){ //Define what happens on the RSSI button click
             SparkAPIGetVariable("RSSI");  //Use the helper function to pull the RSSI variable from the Spark Core. 
                                            //The helper funciotn displays the results but we could do something with the result here.
-
+        }
+		
+        var buttonGetTemperature=document.getElementById("buttonGetTemperature");//Get the object that handles the Temperature button in the page
+        buttonGetTemperature.onclick=function(){ //Define what happens on button click
+            SparkAPIGetVariable("temperature");  //Use the helper function to pull the tempature variable from the Spark Core. 
+                                           //The helper funciotn displays the results but we could do something with the result here.
         }
 		
 		var buttonLEDOn=document.getElementById("buttonLEDOn");//Get the object that handles the LED On button in the page
 		buttonLEDOn.onclick=function() {  //Define what happens on the LED On button click
             SparkAPICallFunction("LED","ON");  //Use the helper function to call the Spark Core registered LED control with "ON" as the command
                                            //The helper funciotn displays the results but we could do something with the result here.
-
         }
         
         var buttonLEDOff=document.getElementById("buttonLEDOff");//Get the object that handles the LED Off button in the page
         buttonLEDOff.onclick=function() {  //Define what happens on the LED Off button click
             SparkAPICallFunction("LED","OFF");  //Use the helper function to call the Spark Core registered LED control with "ON" as the command
                                            //The helper funciotn displays the results but we could do something with the result here.
-
         }
     </script>
     <hr></hr>
@@ -149,6 +153,10 @@
     <h2>Code</h2>
     <pre>
 
+//#include statements automatically added by the Spark IDE.
+#include "OneWire/OneWire.h"
+#include "spark-dallas-temperature/spark-dallas-temperature.h"
+
 const int AIN_BATTERY = A7; //Battery voltage is monitored though a divide by 2 voltage 
                             //divider on my hardware bread board. This will not work for
                             //you unless you add this cicuit.  Do not connect more then 3.3V 
@@ -159,6 +167,10 @@ unsigned long oldMS=0;  //Used to keep last elappsed time in milliseconds, for p
 
 double battVoltage;  //The battery voltage, registered in setup for the Spark API.
 int rssi;  //WiFi Singal quality value,  registered in setup for the Spark API.
+double temperature; //Temperature read from the DS18B20, registered in setup for the Spark API.
+
+DallasTemperature dallas(new OneWire(D0)); // Init Dallas on pin digital pin 0
+
 
 int LED(String command); //this funciton will contol the LED when called from the Web.
 
@@ -168,6 +180,7 @@ void setup(void) { // Arduino style setup. This routine runs only once upon rese
    //the varaibles. We will keep the data fresh in our loop funciton.
   Spark.variable("BattV", &battVoltage, DOUBLE); //Register the BattV variable.
   Spark.variable("rssi", &rssi, INT); //Register the rssi variable. This is the WiFi signal level
+  Spark.variable("temperature", &temperature, DOUBLE); //Register the BattV variable.
   Spark.function("LED",LED);  //Here we register the "led" function. A function is called by the 
                               //Spark Core when someone makes the web request. It receives a string
                               //with any arguments that you must parse.
@@ -175,6 +188,10 @@ void setup(void) { // Arduino style setup. This routine runs only once upon rese
   //Setup hardware functions
   pinMode(DIO_LED,OUTPUT);    //Set the LED pin to output mode
   digitalWrite(DIO_LED,LOW);  //Set the LED pin LOW to start, off
+  
+  dallas.begin();  //initialize the temp library module
+  
+  Serial1.begin(115200);
 }
 
 //Do all our work in the loop funciton. Note that the Spark Core takes care of 
@@ -189,6 +206,11 @@ void loop(void) {
         battVoltage = ((double)adcValue/4095.0)*6.6; //Convert the raw ADC input to actual volts. (note divide by 2 resistor divider used)
 
         rssi=WiFi.RSSI();  //Grab the WiFi Signal Level value.
+        
+        dallas.requestTemperatures();
+        temperature = dallas.getTempCByIndex( 0 );
+        Serial1.print("Temperature: "); 
+        Serial1.println(temperature) ;
     }
 }
 
@@ -202,7 +224,6 @@ int LED(String command){  //Called by the web LED request automaticaly as regist
     }
     return(1);  //This value is passed all the way back to the web requester as an int. -1 usualy means fail.
 }
-
 </pre>
 </body>
 </html>
