@@ -10,6 +10,7 @@ from my blog...
 David Fowler AKA uCHobby - david.fowler@gmail.com - http://www.uchobby.com
 
 The project consist of two files.
+
 html/index.html - The html file you want to load into your web IDE (ie.. Brackets)
 
 firmware/SparkCoreSimpleWebDemo.cpp - The firmware file to cut and past into your Spark Web IDE. 
