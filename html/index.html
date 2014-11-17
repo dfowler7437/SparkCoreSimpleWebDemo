@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>Spark Core Simple Demo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <h3>Spark Web API Demo</h3>
+	<div id="buttons">
+		<button id="buttonGetStatus">Get Status</button>
+		<button id="buttonGetAnalog">Get Analog</button>
+        <button id="buttonGetRSSI">Get WiFi Signal</button>
+		<button id="buttonLEDOn">LED ON</button>
+		<button id="buttonLEDOff">LED OFF</button>
+	</div>
+    <div><h4>API Request:<p id="spanAPIRequest"></p></h4>
+    </div>
+    <div><h4>API Response:<p id="spanAPIResponse"></p></h4>
+	</pre>
+  	<script type="application/javascript">
+        var sparkURL="https://api.spark.io/v1/devices/";  //Web address for the Spark API
+        var accessToken="4a6150c9820f7fd8d099e38fc79877a3f3a5f90c";  //Access token for your core/app
+        var deviceID="53ff70066667574856342467";          //Device ID for your device.
+
+        //Helper function to call the API for a registered variable. Call with nothing to get a basic status response.
+        //Uses the deviceID and accessToken, does a GET at the server. Shows both the request and the result on the 
+        //HTML page as a JSON object.
+        function SparkAPIGetVariable(variableName) {  
+            spanAPIResponse.innerHTML="";  //Clear the web page spot for the responce
+            spanAPIRequest.innerHTML="[GET]"; //Clear the web page spot for the request and show that an HTTP GET is used.
+            var anHttpRequest = new XMLHttpRequest();  //Get an HTTP requestor object from the browser
+            anHttpRequest.onreadystatechange = function () {  //Define the function to handle the API response
+                if (anHttpRequest.readyState === 4 && anHttpRequest.status === 200) {  //Did we get a good response?
+                    var status=JSON.parse(anHttpRequest.responseText);  //Parse the JSON response body
+                    spanAPIResponse.innerHTML=JSON.stringify(status);  //Display the response in the web page.
+                    console.log(anHttpRequest.responseText);  //Send a copy to the JavaScript console.
+                }
+            };
+        
+            if (variableName===undefined) {
+                variableName="";
+            }
+            var url=sparkURL+deviceID+"/"+variableName;//Build up the API request URL.
+            spanAPIRequest.innerHTML+=url;  //Update the web page with the planned API Request 
+            anHttpRequest.open("GET", url, true);  //Open our GET with the url constructed above.
+            anHttpRequest.setRequestHeader("Authorization","Bearer "+accessToken);//Pass the access Token as a header value.
+            anHttpRequest.send(null);  //Finish the request, when the server responds we will execute the handler function above.
+        }
+        
+        //Helper function to call the API for a registered funciton. Uses the deviceID and accessToken
+        //Does a POST at the server. Shows both the request and the result on the HTML page as a JSON object.
+        function SparkAPICallFunction(functionName, paramString) {
+            spanAPIResponse.innerHTML="";  //Clear the web page spot for the responce
+            spanAPIRequest.innerHTML="[POST]"; //Clear the web page spot for the request and show that an HTTP POST is used.
+            var url=sparkURL+deviceID+"/"+functionName;  //Build up the API request URL.
+            var params="args="+paramString;              //Build up the parameter string for the POST
+            spanAPIRequest.innerHTML+=url+"  POSTED["+params+"]";  //Update the web page with the planned API Request 
+            var anHttpRequest = new XMLHttpRequest(); //Get an HTTP requestor object from the browser
+            anHttpRequest.open("POST", url, true);  //Open our POST with the url constructed above.
+
+            anHttpRequest.setRequestHeader("Content-type", "application/x-www-form-urlencoded");  //Tell the server we are posting some data
+            anHttpRequest.setRequestHeader("Authorization","Bearer "+accessToken);  //Pass the access Token as a header value.
+
+            anHttpRequest.onreadystatechange = function() {//Define the function to handle the API response
+                if(anHttpRequest.readyState == 4 && anHttpRequest.status == 200) { //Did we get a good response?
+                    var status=JSON.parse(anHttpRequest.responseText);  //Parse the JSON response body
+                    spanAPIResponse.innerHTML=JSON.stringify(status);  //Display the response in the web page.
+                    console.log(anHttpRequest.responseText);  //Send a copy to the JavaScript console.
+                }
+            }
+            anHttpRequest.send(params);  //Finish the request, when the server responds we will execute the handler function above.
+        }
+        
+        var spanAPIRequest=document.getElementById("spanAPIRequest");  //Get the object that handles our API Request display in the page
+        var spanAPIResponse=document.getElementById("spanAPIResponse");//Get the object that handles our API Response display in the page
+
+        var buttonGetStatus=document.getElementById("buttonGetStatus"); //Get the object that handles the Status button in the page
+                buttonGetStatus.onclick=function () { //Define what happens on the Status button click
+            SparkAPIGetVariable();
+        }
+
+        var buttonGetAnalog=document.getElementById("buttonGetAnalog");//Get the object that handles the Analog button in the page
+        buttonGetAnalog.onclick=function () { //Define what happens on the Analog button click
+            SparkAPIGetVariable("BattV");  //Use the helper function to pull the BattV variable from the Spark Core. 
+                                           //The helper funciotn displays the results but we could do something with the result here.
+        }
+
+        var buttonGetRSSI=document.getElementById("buttonGetRSSI");//Get the object that handles the RSSI button in the page
+        buttonGetRSSI.onclick=function(){ //Define what happens on the RSSI button click
+            SparkAPIGetVariable("RSSI");  //Use the helper function to pull the RSSI variable from the Spark Core. 
+                                           //The helper funciotn displays the results but we could do something with the result here.
+
+        }
+		
+		var buttonLEDOn=document.getElementById("buttonLEDOn");//Get the object that handles the LED On button in the page
+		buttonLEDOn.onclick=function() {  //Define what happens on the LED On button click
+            SparkAPICallFunction("LED","ON");  //Use the helper function to call the Spark Core registered LED control with "ON" as the command
+                                           //The helper funciotn displays the results but we could do something with the result here.
+
+        }
+        
+        var buttonLEDOff=document.getElementById("buttonLEDOff");//Get the object that handles the LED Off button in the page
+        buttonLEDOff.onclick=function() {  //Define what happens on the LED Off button click
+            SparkAPICallFunction("LED","OFF");  //Use the helper function to call the Spark Core registered LED control with "ON" as the command
+                                           //The helper funciotn displays the results but we could do something with the result here.
+
+        }
+    </script>
+    <hr></hr>
+    <h1>Spark Core Simple Web Demo</h1>
+    <p> 
+        Welcome to the Spark Core Web API Demo. This file demonstrates using HTML and JavaScript to access a Spark Core module. 
+        No server is required but you may need to edit and operate this file from a Web enabled development tool or Editor. I 
+        recommend <a href="http://brackets.io/">Adobe Brackets</a>.
+    </p>
+    <h2>Operation</h2>
+    <p>
+        The buttons above will call the Spark REST API server for the indicated function. When pressed the actual API request 
+        URL will be shown along with the API Response. Not that if your core is not active the response will time out after a 
+        long while...
+    </p>
+    <p>
+        This demo expects a small bit of code loaded in your Spark Core which works with the JavaScript included in this HTML page.
+    </p>
+    <h2>Demo HTML and JavaScript</h2>
+    <p>
+        You are looking at that file. To view the source, right click on the page in your browser and select “view source” or 
+        save and open this file in an editor, again I recommend <a href="http://brackets.io/">Adobe Brackets</a>.
+    </p>
+    <h2>Connect your Spark Core</h2>
+    <p>
+        To connect this simple app to your Spark Core, replace the strings for your device ID and your access token. These two 
+        values are located in the JavaScript of this file (this html file) near line 25.</p>
+    <ul>
+        <li>Your <em>device ID</em> can be found in the Spark IDE under the “Cores” option in the lower left (looks like a target cross-hair).</li>
+        <li>Your <em>access token</em> is found in the Spark IDE under the “Settings” option in the lower left (looks like a gear).</li>
+    </ul>
+    <h2>Spark Code Firmware</h2>
+    <p>
+        You will also need to load your core with the demo application included below.. Cut and paste this to the Spark IDE for your core.  
+    </p>
+    <p>
+        <em>Note:</em> The “BattV” variable is actually reading analog input 7, assuming a voltage divider is connected there. 
+        Do not connect this input to your battery unless you have a divide by 2 voltage divider in line. If you are running your 
+        Core on a 4XAA pack, as I do, you may want to monitor the battery voltage…
+    </p>
+    <h2>Code</h2>
+    <pre>
+
+const int AIN_BATTERY = A7; //Battery voltage is monitored though a divide by 2 voltage 
+                            //divider on my hardware bread board. This will not work for
+                            //you unless you add this cicuit.  Do not connect more then 3.3V 
+                            //to any pin on the Spark Core.
+const int DIO_LED = D7; //Built in LED on D7. It's blue and next to the usb connector
+unsigned long currentMS=0;  //Used to keep the current time in milliseconds for paceing in the loop function
+unsigned long oldMS=0;  //Used to keep last elappsed time in milliseconds, for paceing in the loop function
+
+double battVoltage;  //The battery voltage, registered in setup for the Spark API.
+int rssi;  //WiFi Singal quality value,  registered in setup for the Spark API.
+
+int LED(String command); //this funciton will contol the LED when called from the Web.
+
+//Configure the hardware and register this core's services to the Spark Server. 
+void setup(void) { // Arduino style setup. This routine runs only once upon reset
+   //Register our Spark functions here.  Note that we are telling the Spark module where to find 
+   //the varaibles. We will keep the data fresh in our loop funciton.
+  Spark.variable("BattV", &battVoltage, DOUBLE); //Register the BattV variable.
+  Spark.variable("rssi", &rssi, INT); //Register the rssi variable. This is the WiFi signal level
+  Spark.function("LED",LED);  //Here we register the "led" function. A function is called by the 
+                              //Spark Core when someone makes the web request. It receives a string
+                              //with any arguments that you must parse.
+  
+  //Setup hardware functions
+  pinMode(DIO_LED,OUTPUT);    //Set the LED pin to output mode
+  digitalWrite(DIO_LED,LOW);  //Set the LED pin LOW to start, off
+}
+
+//Do all our work in the loop funciton. Note that the Spark Core takes care of 
+//all the network stuff when loop returns so dont get stuck in loop for long. Careful with "delay" functions
+void loop(void) {
+    //Use millisecond time to pace things, we want to get out of the loop function ASAP and will 
+    //use this snip of code to check for when it's time to do something.
+    currentMS=millis();  //Grab the current millisecond timer value
+    if(currentMS>(oldMS+1000)){ //Has 1000 milliseconds ellapsed since last time (1 second)
+        oldMS=currentMS;  //Yes, it's time.. Keep the current milliseconds to check later.
+        int adcValue=analogRead(AIN_BATTERY);  //Read the battery input voltage (note this requires some wiring)
+        battVoltage = ((double)adcValue/4095.0)*6.6; //Convert the raw ADC input to actual volts. (note divide by 2 resistor divider used)
+
+        rssi=WiFi.RSSI();  //Grab the WiFi Signal Level value.
+    }
+}
+
+//Funciton to control the LED. Takes a string parameter and parses it for the word "ON".
+int LED(String command){  //Called by the web LED request automaticaly as registered in setup().
+    if(command=="ON"){    //is the command string set to "ON"
+        digitalWrite(DIO_LED,HIGH);  //Yes it is, turn on the LED
+    }
+    else {
+        digitalWrite(DIO_LED,LOW);  //Nope, turn it off.
+    }
+    return(1);  //This value is passed all the way back to the web requester as an int. -1 usualy means fail.
+}
+
+</pre>
+</body>
+</html>
+
